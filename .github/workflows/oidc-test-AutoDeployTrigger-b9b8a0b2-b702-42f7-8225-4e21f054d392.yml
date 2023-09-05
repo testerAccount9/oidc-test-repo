@@ -1,0 +1,45 @@
+name: Trigger auto deployment for oidc-test
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - 'result/**'
+    - '.github/workflows/oidc-test-AutoDeployTrigger-b9b8a0b2-b702-42f7-8225-4e21f054d392.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.OIDCTEST_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.OIDCTEST_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.OIDCTEST_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          appSourcePath: ${{ github.workspace }}/result 
+          registryUrl: oidctestregistry.azurecr.io
+          registryUsername: ${{ secrets.OIDCTEST_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.OIDCTEST_REGISTRY_PASSWORD }}
+          containerAppName: oidc-test
+          resourceGroup: Testing
+          imageToBuild: oidctestregistry.azurecr.io/oidc-test:${{ github.sha }}
+          dockerfilePath: Dockerfile
+
+
