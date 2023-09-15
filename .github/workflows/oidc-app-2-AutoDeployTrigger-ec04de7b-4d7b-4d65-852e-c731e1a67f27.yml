@@ -1,0 +1,42 @@
+name: Trigger auto deployment for oidc-app-2
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - 'result/**'
+    - '.github/workflows/oidc-app-2-AutoDeployTrigger-ec04de7b-4d7b-4d65-852e-c731e1a67f27.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:
+      
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.OIDCAPP2_AZURE_CREDENTIALS }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          appSourcePath: ${{ github.workspace }}/result 
+          registryUrl: oidcregistry2.azurecr.io
+          registryUsername: ${{ secrets.OIDCAPP2_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.OIDCAPP2_REGISTRY_PASSWORD }}
+          containerAppName: oidc-app-2
+          resourceGroup: Testing
+          imageToBuild: oidcregistry2.azurecr.io/oidc-app-2:${{ github.sha }}
+          dockerfilePath: Dockerfile
+
+     
+
