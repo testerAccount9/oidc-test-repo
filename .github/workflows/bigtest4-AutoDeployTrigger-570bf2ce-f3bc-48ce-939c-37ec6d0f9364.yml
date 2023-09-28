@@ -1,0 +1,42 @@
+name: Trigger auto deployment for bigtest4
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - 'result/**'
+    - '.github/workflows/bigtest4-AutoDeployTrigger-570bf2ce-f3bc-48ce-939c-37ec6d0f9364.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:
+      
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.BIGTEST4_AZURE_CREDENTIALS }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          appSourcePath: ${{ github.workspace }}/result 
+          registryUrl: continuousdeploymenttestregisrty.azurecr.io
+          registryUsername: ${{ secrets.BIGTEST4_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.BIGTEST4_REGISTRY_PASSWORD }}
+          containerAppName: bigtest4
+          resourceGroup: Testing
+          imageToBuild: continuousdeploymenttestregisrty.azurecr.io/bigtest4:${{ github.sha }}
+          dockerfilePath: Dockerfile
+
+     
+
