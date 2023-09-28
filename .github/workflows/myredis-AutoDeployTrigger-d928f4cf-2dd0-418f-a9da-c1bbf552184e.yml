@@ -1,0 +1,45 @@
+name: Trigger auto deployment for myredis
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - 'result/**'
+    - '.github/workflows/myredis-AutoDeployTrigger-d928f4cf-2dd0-418f-a9da-c1bbf552184e.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.MYREDIS_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.MYREDIS_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.MYREDIS_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          appSourcePath: ${{ github.workspace }}/result 
+          registryUrl: continuousdeploymenttestregisrty.azurecr.io
+          registryUsername: ${{ secrets.MYREDIS_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.MYREDIS_REGISTRY_PASSWORD }}
+          containerAppName: myredis
+          resourceGroup: Testing
+          imageToBuild: continuousdeploymenttestregisrty.azurecr.io/myredis:${{ github.sha }}
+          dockerfilePath: Dockerfile
+
+
