@@ -1,0 +1,42 @@
+name: Trigger auto deployment for cond-1
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - 'result/**'
+    - '.github/workflows/cond-1-AutoDeployTrigger-bf4af2d7-eda3-4a09-a866-489b8c87cff1.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:
+      
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.COND1_AZURE_CREDENTIALS }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}/result 
+          registryUrl: antuxtest.azurecr.io
+          registryUsername: ${{ secrets.COND1_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.COND1_REGISTRY_PASSWORD }}
+          containerAppName: cond-1
+          resourceGroup: OGFs228-0412-gayathri
+          imageToBuild: antuxtest.azurecr.io/cond-1:${{ github.sha }}
+          dockerfilePath: Dockerfile
+
+     
+
