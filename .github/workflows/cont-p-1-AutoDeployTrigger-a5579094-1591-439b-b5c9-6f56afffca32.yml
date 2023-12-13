@@ -1,0 +1,42 @@
+name: Trigger auto deployment for cont-p-1
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ TestingSP ]
+    paths:
+    - 'result/**'
+    - '.github/workflows/cont-p-1-AutoDeployTrigger-a5579094-1591-439b-b5c9-6f56afffca32.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:
+      
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.CONTP1_AZURE_CREDENTIALS }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}/result 
+          registryUrl: antuxtest.azurecr.io
+          registryUsername: ${{ secrets.CONTP1_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.CONTP1_REGISTRY_PASSWORD }}
+          containerAppName: cont-p-1
+          resourceGroup: OGFCan-071223-gayathri
+          imageToBuild: antuxtest.azurecr.io/cont-p-1:${{ github.sha }}
+          dockerfilePath: Dockerfile
+
+     
+
