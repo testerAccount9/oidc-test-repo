@@ -1,0 +1,42 @@
+name: Trigger auto deployment for contdeployapp
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - 'result/**'
+    - '.github/workflows/contdeployapp-AutoDeployTrigger-012d0a08-6ca7-4ac3-8ec2-2ee139b61e39.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:
+      
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.CONTDEPLOYAPP_AZURE_CREDENTIALS }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}/result 
+          registryUrl: antuxtest.azurecr.io
+          registryUsername: ${{ secrets.CONTDEPLOYAPP_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.CONTDEPLOYAPP_REGISTRY_PASSWORD }}
+          containerAppName: contdeployapp
+          resourceGroup: OGFCan-071223-gayathri
+          imageToBuild: antuxtest.azurecr.io/contdeployapp:${{ github.sha }}
+          dockerfilePath: Dockerfile
+
+     
+
